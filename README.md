@@ -74,14 +74,23 @@ python3 $SKILL/scripts/ppt.py export <ws> --format pptx
 - 含 layout.json（输入）、slides/SVG（产物）、shots/PNG（截图）、deck.pptx
 - 直接 `open examples/dify-intro/deck.html` 看翻页效果
 
+## 延展开发（Layout / Component / Theme）
+
+完整的接力开发规范见 **[reference/extension-guide.md](reference/extension-guide.md)**，涵盖：
+
+- 新增 Layout：只改 manifest.json，零代码
+- 新增 Component：写 1 个 SVG 模板 + 1 个 native 方法
+- 新增 Theme：只需 manifest.json，模板自动继承
+
 ## 添加新风格
 
 ```bash
-cp -r themes/bento-tech themes/<your-style>
-# 改 manifest.json 的 colors / type_scale；layouts 元数据按需调
+# 只需创建 manifest.json，模板自动从 bento-tech 继承
+mkdir themes/<your-style>
+# 复制 bento-tech 或 bento-light 的 manifest.json，修改颜色 / 字号
 ```
 
-详见 [reference/theme-authoring.md](reference/theme-authoring.md)。
+详见 [reference/extension-guide.md](reference/extension-guide.md)。
 
 ## 添加新图片 provider
 
@@ -100,7 +109,8 @@ ppt-agent/
 ├── SKILL.md                       # skill 入口（Claude 自动加载）
 ├── reference/                     # 渐进披露文档（需要时再读）
 │   ├── pyramid-outline-prompt.md  # sandun 开源的金字塔原理 prompt
-│   ├── bento-layouts-guide.md     # 6 种布局 + 6 种 component schema
+│   ├── extension-guide.md     # Layout / Component / Theme 延展规范（接力开发必读）
+│   ├── bento-layouts-guide.md     # 6 种布局 + component data schema
 │   ├── image-providers.md         # AI 怎么写 src / source
 │   ├── theme-authoring.md         # 加新主题
 │   └── pptx-svg-internals.md      # svgBlip OOXML 细节
