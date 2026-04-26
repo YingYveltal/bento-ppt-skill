@@ -134,6 +134,18 @@
 
 `item.highlight: true`：标记当前焦点项。**只要有任何一项 highlight=true**，模板会进入"降亮模式"——非高亮项变灰、高亮项加粗 + 左侧细线。适合"3 步流程当前在哪一步""5 个特性主推哪一个"的场景。
 
+**容量参考**（card-list 在不同 slot 下能塞多少项）：
+
+| Slot 来源 | inner H | 有 desc 最多 | 无 desc 最多 |
+|---|---|---|---|
+| `single-focus.main` / `two-col-*` | 498-578 | 6 | 8 |
+| `hero-top.col1/col2/col3` | 238 | 3 | 4 |
+| `mixed-grid.bl/br` | 198 | **2** | 3 |
+| `mixed-grid.tl/tr` | 200 | **2** | 3 |
+| `hero-top.hero` | 160 | **1-2** | 2 |
+
+**截断行为**：layout.json 写 N 项但卡装不下时，模板**优先保留所有 highlight 项**，剩余按原顺序填补。所以"重点项一定不丢"。但仍建议 AI 写 layout 时主动控制项数：放不下就拆页或换更大的 slot。
+
 ### card-stack（多数据叠加卡 — 一卡承载一组相关指标）
 
 ```json

@@ -187,9 +187,13 @@ class NativeRenderer:
         font_name: str | None = None,
         transparency: float = 0.0,
         letter_spacing: int = 0,
+        word_wrap: bool = True,
+        v_anchor: str = "top",
     ):
         """SVG 坐标 + 像素字号的 textbox。
         svg_y 是 textbox **顶部** y（非 baseline）；调用方负责把 SVG baseline 转 top。
+        word_wrap=False 时数字/单行内容不会被 PowerPoint 自动换行（防溢出乱位置）。
+        v_anchor='middle' 让文字在 textbox 内垂直居中（适合 quote 这种 wrap 后高度不定的场景）。
         """
         tb = slide.shapes.add_textbox(
             self._x(svg_x), self._y(svg_y),
@@ -198,7 +202,13 @@ class NativeRenderer:
         tf = tb.text_frame
         tf.margin_left = tf.margin_right = 0
         tf.margin_top = tf.margin_bottom = 0
-        tf.word_wrap = True
+        tf.word_wrap = word_wrap
+        if v_anchor == "middle":
+            from pptx.enum.text import MSO_ANCHOR
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        elif v_anchor == "bottom":
+            from pptx.enum.text import MSO_ANCHOR
+            tf.vertical_anchor = MSO_ANCHOR.BOTTOM
         p = tf.paragraphs[0]
         p.text = text
         run = p.runs[0] if p.runs else None
@@ -214,7 +224,6 @@ class NativeRenderer:
             p.alignment = PP_ALIGN.CENTER
         else:
             p.alignment = PP_ALIGN.LEFT
-        # 透明度 + 字间距：python-pptx 没 setter，用 lxml 改 rPr
         if (transparency > 0 or letter_spacing > 0) and run is not None:
             self._apply_rpr_extras(run, color, transparency, letter_spacing)
         return tb
@@ -402,10 +411,11 @@ class NativeRenderer:
         self._add_textbox(
             slide, v_str,
             inner["x"], inner["y"] + y - huge,
-            vw + 12, int(huge * 1.2),
+            W, int(huge * 1.2),
             font_size=huge,
             color=self.theme["colors"]["text_primary"],
             bold=True,
+            word_wrap=False,
         )
 
         unit = data.get("unit")
@@ -540,10 +550,11 @@ class NativeRenderer:
             self._add_textbox(
                 slide, v_str,
                 inner["x"], inner["y"] + primary_y - huge,
-                vw + 12, int(huge * 1.2),
+                W, int(huge * 1.2),
                 font_size=huge,
                 color=self.theme["colors"]["text_primary"],
                 bold=True,
+                word_wrap=False,
             )
             if p.get("unit"):
                 self._add_textbox(
@@ -666,11 +677,21 @@ class NativeRenderer:
         list_top = y + 12
 
         has_desc = any(isinstance(it, dict) and it.get("desc") for it in items_in)
-        min_row = 56 if has_desc else 44
+        min_row = 48 if has_desc else 36
         avail_h = H - list_top - 16
         max_fit = max(1, avail_h // min_row)
-        n = min(len(items_in), max_fit)
-        items_use = items_in[:n]
+        # 选项策略：必须截断时优先保留 highlight 项；剩余按原顺序填补
+        if len(items_in) <= max_fit:
+            items_use = items_in
+        else:
+            hl_indices = [i for i, it in enumerate(items_in) if isinstance(it, dict) and it.get("highlight")]
+            selected = set(hl_indices[:max_fit])
+            for i in range(len(items_in)):
+                if len(selected) >= max_fit:
+                    break
+                selected.add(i)
+            items_use = [items_in[i] for i in sorted(selected)]
+        n = len(items_use)
         row_h = max(min_row, min(80, avail_h // n if n else avail_h))
 
         for i, it in enumerate(items_use):
@@ -742,28 +763,46 @@ class NativeRenderer:
             # 横幅模式：quote 左侧 + author 右侧
             author_w = 300 if (data.get("author") or data.get("role")) else 0
             q_max_w = W - 32 - author_w - 24
+            # textbox 高度 = H，用 vertical_anchor=middle 让 PowerPoint 自动垂直居中
             self._add_textbox(
                 slide, quote,
-                inner["x"] + 32, inner["y"] + (H - q_size) // 2 - 6, q_max_w, int(q_size * 2.5),
+                inner["x"] + 32, inner["y"], q_max_w, H,
                 font_size=q_size,
                 color=self.theme["colors"]["text_primary"],
                 bold=True,
+                v_anchor="middle",
             )
             if data.get("author") or data.get("role"):
                 ax = inner["x"] + W - author_w + 16
-                ay = (H - 60) // 2 + 10
+                # author 区也用 vertical_anchor=middle
+                a_lines = []
                 if data.get("author"):
-                    self._add_textbox(
-                        slide, data["author"],
-                        ax, inner["y"] + ay, author_w, 28,
-                        font_size=20, color=self.theme["colors"]["text_primary"], bold=True,
-                    )
+                    a_lines.append(("author", data["author"]))
                 if data.get("role"):
-                    self._add_textbox(
-                        slide, data["role"],
-                        ax, inner["y"] + ay + 28, author_w, 22,
-                        font_size=14, color=self.theme["colors"]["text_muted"],
-                    )
+                    a_lines.append(("role", data["role"]))
+                # 用 textbox 容纳两行：用 add_paragraph
+                tb = slide.shapes.add_textbox(
+                    self._x(ax), self._y(inner["y"]),
+                    self._x(author_w - 16), self._y(H),
+                )
+                tf = tb.text_frame
+                tf.margin_left = tf.margin_right = 0
+                tf.margin_top = tf.margin_bottom = 0
+                tf.word_wrap = True
+                from pptx.enum.text import MSO_ANCHOR
+                tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+                for i, (kind, text) in enumerate(a_lines):
+                    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+                    p.text = text
+                    run = p.runs[0] if p.runs else None
+                    if run is not None:
+                        if kind == "author":
+                            run.font.size = Pt(_px_to_pt(20)); run.font.bold = True
+                            run.font.color.rgb = _hex(self.theme["colors"]["text_primary"])
+                        else:
+                            run.font.size = Pt(_px_to_pt(14))
+                            run.font.color.rgb = _hex(self.theme["colors"]["text_muted"])
+                        run.font.name = "PingFang SC"
         else:
             # 大卡模式：quote 居中（PowerPoint 自动换行）
             available_h = H - (110 if data.get("author") else 30)

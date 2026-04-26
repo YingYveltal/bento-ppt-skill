@@ -49,13 +49,28 @@
 {%- set list_top = y.p + 12 -%}
 
 {%- set has_desc = items_in | selectattr('desc', 'defined') | list | length > 0 -%}
-{%- set min_row = 56 if has_desc else 44 -%}
+{%- set min_row = 48 if has_desc else 36 -%}
 {%- set avail_h = H - list_top - 16 -%}
 {%- set max_fit = (avail_h / min_row) | int -%}
-{%- set n = items_in | length -%}
-{%- if n > max_fit -%}{%- set n = max_fit -%}{%- endif -%}
-{%- if n < 1 -%}{%- set n = 1 -%}{%- endif -%}
-{%- set items_use = items_in[:n] -%}
+{%- if max_fit < 1 -%}{%- set max_fit = 1 -%}{%- endif -%}
+{# 截断策略：优先保留 highlight 项，剩余按原顺序填补 #}
+{%- if (items_in | length) <= max_fit -%}
+{%- set items_use = items_in -%}
+{%- else -%}
+{%- set ns_sel = namespace(idx=[]) -%}
+{%- for it in items_in -%}
+{%- if (it is mapping) and it.highlight and (ns_sel.idx | length) < max_fit -%}
+{%- set _ = ns_sel.idx.append(loop.index0) -%}
+{%- endif -%}
+{%- endfor -%}
+{%- for it in items_in -%}
+{%- if (loop.index0 not in ns_sel.idx) and (ns_sel.idx | length) < max_fit -%}
+{%- set _ = ns_sel.idx.append(loop.index0) -%}
+{%- endif -%}
+{%- endfor -%}
+{%- set items_use = ns_sel.idx | sort | map('extract', items_in) | list -%}
+{%- endif -%}
+{%- set n = items_use | length -%}
 
 {%- set row_h = (avail_h / n) | int -%}
 {%- if row_h < min_row -%}{%- set row_h = min_row -%}{%- endif -%}
