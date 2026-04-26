@@ -1023,6 +1023,125 @@ class NativeRenderer:
                 color=self.theme["colors"]["text_primary"], bold=True,
             )
 
+    # ---------- Component: card-compare ----------
+
+    def _render_card_compare(self, slide, inner: dict, data: dict) -> None:
+        H, W = inner["h"], inner["w"]
+        ts = self.theme["type_scale"]
+        c = self.theme["colors"]
+        headers = data.get("headers") or []
+        n_cols = len(headers)
+        if n_cols == 0:
+            return
+        recommend = int(data.get("recommend", -1))
+        rows = data.get("rows") or []
+
+        y = 0
+        if data.get("eyebrow"):
+            self._add_textbox(
+                slide, data["eyebrow"],
+                inner["x"], inner["y"] + y - 4, W, ts["eyebrow"] + 6,
+                font_size=ts["eyebrow"], color=c["accent_secondary"],
+                bold=True, letter_spacing=300,
+            )
+            y += ts["eyebrow"] + 18
+        if data.get("title"):
+            self._add_textbox(
+                slide, data["title"],
+                inner["x"], inner["y"] + y - int(ts["h3"] * 0.15), W, ts["h3"] + 8,
+                font_size=ts["h3"], color=c["text_primary"], bold=True,
+            )
+            y += ts["h3"] + 22
+
+        table_y = y + 12
+        label_w = int(W * 0.27)
+        col_gap = 3
+        col_w = (W - label_w - col_gap * (n_cols - 1)) // max(n_cols, 1)
+        avail_h = H - table_y - 8
+        row_h = max(36, min(64, int(avail_h / (len(rows) + 1.5))))
+        head_h = int(row_h * 1.35)
+
+        # 推荐列背景高亮条（贯穿所有行）
+        if 0 <= recommend < n_cols:
+            total_h = head_h + len(rows) * (row_h + 2) + 4
+            rec_col_x = inner["x"] + label_w + recommend * (col_w + col_gap)
+            hl_bg = slide.shapes.add_shape(
+                MSO_SHAPE.ROUNDED_RECTANGLE,
+                self._x(rec_col_x - 2), self._y(inner["y"] + table_y),
+                self._x(col_w + 4), self._y(total_h),
+            )
+            self._set_solid_fill(hl_bg, c["accent_primary"], opacity=0.08)
+            hl_bg.line.fill.background()
+            try:
+                hl_bg.adjustments[0] = 0.12
+            except Exception:
+                pass
+
+        # Header 行
+        for i, h in enumerate(headers):
+            col_x = inner["x"] + label_w + i * (col_w + col_gap)
+            hdr = slide.shapes.add_shape(
+                MSO_SHAPE.ROUNDED_RECTANGLE,
+                self._x(col_x), self._y(inner["y"] + table_y),
+                self._x(col_w), self._y(head_h),
+            )
+            if i == recommend:
+                self._set_solid_fill(hdr, c["accent_primary"], opacity=1.0)
+                text_color = "#0a0e27"
+                bold = True
+            else:
+                self._set_solid_fill(hdr, c["text_primary"], opacity=0.08)
+                text_color = c["text_secondary"]
+                bold = False
+            hdr.line.fill.background()
+            try:
+                hdr.adjustments[0] = 0.15
+            except Exception:
+                pass
+            self._add_textbox(
+                slide, h,
+                col_x, inner["y"] + table_y + (head_h - ts["h4"]) // 2 - 2,
+                col_w, ts["h4"] + 8,
+                font_size=ts["h4"], color=text_color, bold=bold, align="center",
+            )
+
+        # 数据行
+        for ri, row in enumerate(rows):
+            ry = table_y + head_h + 4 + ri * (row_h + 2)
+            is_hl = bool(row.get("highlight"))
+            if is_hl or ri % 2 == 0:
+                row_bg = slide.shapes.add_shape(
+                    MSO_SHAPE.ROUNDED_RECTANGLE,
+                    self._x(inner["x"]), self._y(inner["y"] + ry),
+                    self._x(W), self._y(row_h),
+                )
+                self._set_solid_fill(row_bg, c["accent_primary"] if is_hl else c["text_primary"],
+                                     opacity=0.12 if is_hl else 0.04)
+                row_bg.line.fill.background()
+                try:
+                    row_bg.adjustments[0] = 0.08
+                except Exception:
+                    pass
+            # 行标签
+            self._add_textbox(
+                slide, row.get("label", ""),
+                inner["x"], inner["y"] + ry + (row_h - ts["body"]) // 2 - 2,
+                label_w - 8, ts["body"] + 6,
+                font_size=ts["body"], color=c["text_muted"],
+            )
+            # 各列值
+            for ci, val in enumerate(row.get("values") or []):
+                col_x = inner["x"] + label_w + ci * (col_w + col_gap)
+                is_rec = (ci == recommend)
+                self._add_textbox(
+                    slide, str(val),
+                    col_x, inner["y"] + ry + (row_h - ts["body"]) // 2 - 2,
+                    col_w, ts["body"] + 6,
+                    font_size=ts["body"],
+                    color=c["text_primary"] if (is_hl or is_rec) else c["text_secondary"],
+                    bold=is_hl or is_rec, align="center",
+                )
+
     def _render_card_hero(self, slide, inner: dict, data: dict) -> None:
         H, W = inner["h"], inner["w"]
         # 字号自适应（同 SVG 模板逻辑）

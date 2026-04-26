@@ -15,24 +15,26 @@
       <stop offset="0%" stop-color="{{ theme.colors.accent_primary }}"/>
       <stop offset="100%" stop-color="{{ theme.colors.accent_secondary }}"/>
     </linearGradient>
+    {%- set spot_op = (theme.effects.bg_spot_opacity if theme.effects else 0.4) | default(0.4) -%}
     <radialGradient id="spot-1" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="{{ theme.colors.accent_primary }}" stop-opacity="0.4"/>
+      <stop offset="0%" stop-color="{{ theme.colors.accent_primary }}" stop-opacity="{{ spot_op }}"/>
       <stop offset="100%" stop-color="{{ theme.colors.accent_primary }}" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="spot-2" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="{{ theme.colors.accent_secondary }}" stop-opacity="0.3"/>
+      <stop offset="0%" stop-color="{{ theme.colors.accent_secondary }}" stop-opacity="{{ (spot_op * 0.75) | round(2) }}"/>
       <stop offset="100%" stop-color="{{ theme.colors.accent_secondary }}" stop-opacity="0"/>
     </radialGradient>
     {%- set bg_tex = (theme.effects.bg_texture if theme.effects else 'none') | default('none') -%}
     {%- set tex_op = (theme.effects.bg_texture_opacity if theme.effects else 0.05) | default(0.05) -%}
     {%- set tex_sz = (theme.effects.bg_texture_size if theme.effects else 48) | default(48) -%}
+    {%- set tex_clr = (theme.effects.bg_texture_color if theme.effects else '#ffffff') | default('#ffffff') -%}
     {%- if bg_tex == 'grid' %}
     <pattern id="bg-texture" width="{{ tex_sz }}" height="{{ tex_sz }}" patternUnits="userSpaceOnUse">
-      <path d="M {{ tex_sz }} 0 L 0 0 0 {{ tex_sz }}" fill="none" stroke="#ffffff" stroke-opacity="{{ tex_op }}" stroke-width="0.5"/>
+      <path d="M {{ tex_sz }} 0 L 0 0 0 {{ tex_sz }}" fill="none" stroke="{{ tex_clr }}" stroke-opacity="{{ tex_op }}" stroke-width="0.5"/>
     </pattern>
     {%- elif bg_tex == 'dots' %}
     <pattern id="bg-texture" width="{{ tex_sz }}" height="{{ tex_sz }}" patternUnits="userSpaceOnUse">
-      <circle cx="{{ (tex_sz / 2) | int }}" cy="{{ (tex_sz / 2) | int }}" r="0.9" fill="#ffffff" fill-opacity="{{ tex_op * 2 }}"/>
+      <circle cx="{{ (tex_sz / 2) | int }}" cy="{{ (tex_sz / 2) | int }}" r="0.9" fill="{{ tex_clr }}" fill-opacity="{{ tex_op * 2 }}"/>
     </pattern>
     {%- endif %}
   </defs>
@@ -61,6 +63,14 @@
   <!-- 装饰光斑（不影响内容可读性） -->
   <ellipse cx="1180" cy="80" rx="280" ry="220" fill="url(#spot-1)"/>
   <ellipse cx="120" cy="640" rx="280" ry="200" fill="url(#spot-2)"/>
+
+  {%- if page.ghost_text %}
+  <!-- Ghost text：巨型半透明背景装饰字 -->
+  <text x="{{ theme.viewBox.width // 2 }}" y="{{ (theme.viewBox.height * 0.68) | int }}"
+        font-size="300" font-weight="800" text-anchor="middle"
+        fill="{{ theme.colors.text_primary }}" opacity="0.04"
+        font-family="{{ theme.fonts.sans }}">{{ page.ghost_text }}</text>
+  {%- endif %}
 
   <!-- layout 渲染区 -->
   {{ content | safe }}

@@ -14,8 +14,7 @@
     <linearGradient id="accent-grad-v" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#7c5cff"/>
       <stop offset="100%" stop-color="#00d4ff"/>
-    </linearGradient>
-    <radialGradient id="spot-1" cx="50%" cy="50%" r="50%">
+    </linearGradient><radialGradient id="spot-1" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.4"/>
       <stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/>
     </radialGradient>
@@ -46,7 +45,6 @@
   <!-- 装饰光斑（不影响内容可读性） -->
   <ellipse cx="1180" cy="80" rx="280" ry="220" fill="url(#spot-1)"/>
   <ellipse cx="120" cy="640" rx="280" ry="200" fill="url(#spot-2)"/>
-
   <!-- layout 渲染区 -->
   <g transform="translate(56, 56)">
   <rect x="0" y="0" width="776" height="280"
@@ -86,9 +84,10 @@
   <svg x="40" y="40"
        width="292" height="200"
        viewBox="0 0 292 200">
-    <text x="0" y="20" class="eyebrow">运行指标</text><text x="0" y="112" font-size="64" fill="#ffffff" font-weight="800">187</text><text x="113" y="112" font-size="19" fill="#00d4ff" font-weight="600">ms</text><text x="147" y="108" font-size="18" fill="#bcc4d8">API 平均响应</text><text x="0" y="152" font-size="12" fill="#6b7392" letter-spacing="1">99 分位</text>
-<text x="0" y="182" font-size="30" fill="#ffffff" font-weight="700">420 ms</text><text x="146" y="152" font-size="12" fill="#6b7392" letter-spacing="1">错误率</text>
-<text x="146" y="182" font-size="30" fill="#ffffff" font-weight="700">0.03%</text><rect x="0" y="140" width="292" height="6" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <text x="0" y="20" class="eyebrow">运行指标</text>
+<text x="0" y="85" font-size="48" fill="#ffffff" font-weight="800">187</text><text x="86" y="85" font-size="14" fill="#00d4ff" font-weight="600">ms</text><text x="114" y="81" font-size="18" fill="#bcc4d8">API 平均响应</text><text x="0" y="101" font-size="12" fill="#6b7392" letter-spacing="1">99 分位</text>
+<text x="0" y="119" font-size="18" fill="#ffffff" font-weight="700">420 ms</text><text x="146" y="101" font-size="12" fill="#6b7392" letter-spacing="1">错误率</text>
+<text x="146" y="119" font-size="18" fill="#ffffff" font-weight="700">0.03%</text><rect x="0" y="140" width="292" height="6" rx="3" fill="#ffffff" fill-opacity="0.10"/>
 <rect x="0" y="140" width="289" height="6" rx="3" fill="url(#accent-grad)"/><text x="0" y="168" font-size="14" fill="#bcc4d8">SLA 99% 达标</text>
   </svg>
 </g><g transform="translate(56, 356)">

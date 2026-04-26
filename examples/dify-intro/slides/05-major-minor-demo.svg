@@ -14,8 +14,7 @@
     <linearGradient id="accent-grad-v" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#7c5cff"/>
       <stop offset="100%" stop-color="#00d4ff"/>
-    </linearGradient>
-    <radialGradient id="spot-1" cx="50%" cy="50%" r="50%">
+    </linearGradient><radialGradient id="spot-1" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#7c5cff" stop-opacity="0.4"/>
       <stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/>
     </radialGradient>
@@ -46,7 +45,6 @@
   <!-- 装饰光斑（不影响内容可读性） -->
   <ellipse cx="1180" cy="80" rx="280" ry="220" fill="url(#spot-1)"/>
   <ellipse cx="120" cy="640" rx="280" ry="200" fill="url(#spot-2)"/>
-
   <!-- layout 渲染区 -->
   <g transform="translate(308, 56)">
   <rect x="0" y="0" width="664" height="578"

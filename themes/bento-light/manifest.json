@@ -1,7 +1,7 @@
 {
-  "name": "bento-tech",
+  "name": "bento-light",
   "version": "1.0.0",
-  "description": "Bento Grid 现代风（科技/发布会调性，深色背景 + 渐变光斑 + 玻璃拟态卡片）",
+  "description": "Bento Grid 浅色风（商务/产品调性，米白背景 + 精细描边 + 干净卡片）",
   "viewBox": {
     "width": 1280,
     "height": 720
@@ -23,20 +23,20 @@
     "stat_unit": 28
   },
   "colors": {
-    "bg_start": "#0a0e27",
-    "bg_end": "#1a1f3a",
-    "card_fill": "#ffffff",
-    "card_fill_opacity": 0.06,
-    "card_stroke": "#ffffff",
-    "card_stroke_opacity": 0.12,
-    "text_primary": "#ffffff",
-    "text_secondary": "#bcc4d8",
-    "text_muted": "#6b7392",
-    "accent_primary": "#7c5cff",
-    "accent_secondary": "#00d4ff",
-    "accent_tertiary": "#ff7eb6",
-    "accent_success": "#22d97f",
-    "accent_warning": "#ffb84d"
+    "bg_start": "#F6F3EE",
+    "bg_end": "#EDE9E2",
+    "card_fill": "#FFFFFF",
+    "card_fill_opacity": 0.75,
+    "card_stroke": "#1a1a2e",
+    "card_stroke_opacity": 0.09,
+    "text_primary": "#0F0F10",
+    "text_secondary": "#555666",
+    "text_muted": "#9BA0B0",
+    "accent_primary": "#6644ee",
+    "accent_secondary": "#0066bb",
+    "accent_tertiary": "#c03060",
+    "accent_success": "#0d9e5e",
+    "accent_warning": "#c47d00"
   },
   "spacing": {
     "page_padding": 56,
@@ -47,11 +47,11 @@
     "card_stroke_width": 1
   },
   "effects": {
-    "bg_texture": "grid",
-    "bg_texture_opacity": 0.08,
-    "bg_texture_size": 48,
-    "bg_texture_color": "#ffffff",
-    "bg_spot_opacity": 0.4
+    "bg_texture": "dots",
+    "bg_texture_opacity": 0.06,
+    "bg_texture_size": 32,
+    "bg_texture_color": "#1a1a2e",
+    "bg_spot_opacity": 0.10
   },
   "layouts": {
     "single-focus": {

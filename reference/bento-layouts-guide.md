@@ -2,6 +2,36 @@
 
 把 outline.json 的每一页**翻译成具体布局 + 槽位 + 内容**。这是市面 AI PPT 工具普遍跳过的关键环节。
 
+---
+
+## 可用主题（theme）
+
+| theme | 风格 | 适合 |
+|---|---|---|
+| `bento-tech`（默认） | 深色 + 渐变光斑 + 玻璃拟态卡片 | 科技/发布会/产品展示 |
+| `bento-light` | 浅色米白 + 点状纹理 + 干净白卡片 | 商务/咨询/正式报告 |
+
+整套 deck 统一用一个 theme。如果想在**单页**切换气氛（例如章节首页用深色），推荐把全 deck 设成 bento-light，章节首页切 bento-tech，但实际上目前 layout.json 只支持**单一全局 theme**，混用主题须手动运行两次渲染后合并 slides。
+
+---
+
+## 页面级特殊字段
+
+```json
+{
+  "page": 3,
+  "ghost_text": "VISION",   // 可选：巨型半透明背景装饰字（3-10 个英文/数字字符最佳）
+  "name": "...",
+  "layout": "...",
+  "cards": [...]
+}
+```
+
+`ghost_text`：输出在背景层，opacity=0.04，不影响内容可读性，营造深度感。  
+推荐用在章节首页或核心数据页（例：封面写 "2026"，战略页写 "FUTURE"）。
+
+---
+
 ## layout.json 完整 schema
 
 ```json
@@ -217,6 +247,26 @@
   ]
 }
 ```
+
+### card-compare（多列对比表格，2-3 列，最多 6 行）
+
+```json
+{
+  "eyebrow": "COMPARISON",           // 可选
+  "title": "方案对比",                // 可选
+  "headers": ["基础版", "专业版", "企业版"],  // 2-3 列标题
+  "recommend": 1,                    // 可选：0-based 推荐列下标，该列 header 用 accent 高亮
+  "rows": [
+    { "label": "价格",   "values": ["免费", "¥999/月", "定制"] },
+    { "label": "并发数", "values": ["100", "1,000", "无限"], "highlight": true },
+    { "label": "API",   "values": ["✗", "✓", "✓"] }
+  ]
+}
+```
+
+`recommend`：推荐列（0-based），该列 header 填满 accent 色，列内所有值加粗。  
+`row.highlight`：整行高亮（accent 背景），突出最关键的对比指标。  
+**容量参考**：2 列时最多 6 行，3 列时建议 ≤ 5 行；行数超标内容会溢出卡片底部。
 
 ---
 

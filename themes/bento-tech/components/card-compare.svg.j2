@@ -1,0 +1,97 @@
+{# card-compare: 多列对比表格
+   data:
+     eyebrow  string?
+     title    string?
+     headers  array of strings       列标题（2-3 列）
+     recommend int?                  0-based 推荐列下标，该列 header 用 accent 高亮
+     rows     array of:
+       label    string               行标签（左列）
+       values   array of strings     每列的值（与 headers 等长）
+       highlight bool?               整行高亮（accent 背景）
+#}
+{%- set d = data -%}
+{%- set H = slot_h or 500 -%}
+{%- set W = slot_w or 600 -%}
+{%- set headers = d['headers'] or [] -%}
+{%- set n_cols = headers | length -%}
+{%- set recommend = d.recommend | default(-1) | int -%}
+{%- set rows = d['rows'] or [] -%}
+
+{%- set y = namespace(p=0) -%}
+
+{%- if d.eyebrow -%}
+{%- set y.p = y.p + theme.type_scale.eyebrow + 4 -%}
+<text x="0" y="{{ y.p }}" class="eyebrow">{{ d.eyebrow }}</text>
+{%- endif -%}
+
+{%- if d.title -%}
+{%- set y.p = y.p + theme.type_scale.h3 + 18 -%}
+<text x="0" y="{{ y.p }}" class="h3">{{ d.title }}</text>
+{%- set y.p = y.p + 16 -%}
+{%- endif -%}
+
+{%- if not d.eyebrow and not d.title -%}{%- set y.p = 4 -%}{%- endif -%}
+
+{%- set table_y = y.p + 12 -%}
+{%- set label_w = (W * 0.27) | int -%}
+{%- set col_gap = 3 -%}
+{%- set col_w = ((W - label_w - col_gap * (n_cols - 1)) / (n_cols if n_cols > 0 else 1)) | int -%}
+{%- set avail_h = H - table_y - 8 -%}
+{%- set n_rows = rows | length -%}
+{%- set row_h_raw = (avail_h / (n_rows + 1.5)) | int -%}
+{%- set row_h = [36, [64, row_h_raw] | min] | max -%}
+{%- set head_h = (row_h * 1.35) | int -%}
+
+{# 推荐列竖向强调条（贯穿 header + 所有行）#}
+{%- if recommend >= 0 and n_cols > 0 -%}
+{%- set rec_x = label_w + recommend * (col_w + col_gap) -%}
+{%- set total_h = head_h + n_rows * (row_h + 2) + 4 -%}
+<rect x="{{ rec_x - 2 }}" y="{{ table_y }}" width="{{ col_w + 4 }}" height="{{ total_h }}"
+      rx="12" fill="url(#accent-grad)" fill-opacity="0.08"/>
+{%- endif -%}
+
+{# Header 行 #}
+{%- for h in headers -%}
+{%- set col_x = label_w + loop.index0 * (col_w + col_gap) -%}
+{%- if loop.index0 == recommend -%}
+<rect x="{{ col_x }}" y="{{ table_y }}" width="{{ col_w }}" height="{{ head_h }}" rx="8" fill="url(#accent-grad)"/>
+<text x="{{ col_x + col_w // 2 }}" y="{{ table_y + (head_h // 2) + 8 }}"
+      text-anchor="middle" font-size="{{ theme.type_scale.h4 }}" font-weight="700" fill="#0a0e27">{{ h }}</text>
+{%- else -%}
+<rect x="{{ col_x }}" y="{{ table_y }}" width="{{ col_w }}" height="{{ head_h }}" rx="8"
+      fill="{{ theme.colors.text_primary }}" fill-opacity="0.08"/>
+<text x="{{ col_x + col_w // 2 }}" y="{{ table_y + (head_h // 2) + 8 }}"
+      text-anchor="middle" font-size="{{ theme.type_scale.h4 }}" font-weight="600"
+      fill="{{ theme.colors.text_secondary }}">{{ h }}</text>
+{%- endif -%}
+{%- endfor -%}
+
+{# 数据行 #}
+{%- for row in rows -%}
+{%- set ry = table_y + head_h + 4 + loop.index0 * (row_h + 2) -%}
+{%- set is_hl = row.highlight | default(false) -%}
+
+{%- if is_hl -%}
+<rect x="0" y="{{ ry }}" width="{{ W }}" height="{{ row_h }}" rx="6"
+      fill="{{ theme.colors.accent_primary }}" fill-opacity="0.12"/>
+{%- elif loop.index0 % 2 == 0 -%}
+<rect x="0" y="{{ ry }}" width="{{ W }}" height="{{ row_h }}" rx="4"
+      fill="{{ theme.colors.text_primary }}" fill-opacity="0.04"/>
+{%- endif -%}
+
+{# 行标签 #}
+<text x="0" y="{{ ry + (row_h // 2) + 7 }}"
+      font-size="{{ theme.type_scale.body }}"
+      fill="{{ theme.colors.text_muted }}" font-weight="500">{{ row.label }}</text>
+
+{# 各列值 #}
+{%- for val in (row['values'] or []) -%}
+{%- set col_x = label_w + loop.index0 * (col_w + col_gap) -%}
+{%- set is_rec = (loop.index0 == recommend) -%}
+<text x="{{ col_x + col_w // 2 }}" y="{{ ry + (row_h // 2) + 7 }}"
+      text-anchor="middle"
+      font-size="{{ theme.type_scale.body }}"
+      fill="{{ theme.colors.text_primary if (is_hl or is_rec) else theme.colors.text_secondary }}"
+      font-weight="{{ '700' if (is_hl or is_rec) else '400' }}">{{ val }}</text>
+{%- endfor -%}
+{%- endfor -%}

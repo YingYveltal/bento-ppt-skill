@@ -60,8 +60,13 @@ def load_theme(theme_name: str):
     if not manifest_path.exists():
         raise SystemExit(f"[render] 主题缺 manifest.json: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # 支持主题继承：派生主题目录只需 manifest.json，模板 fallback 到 bento-tech
+    loader_paths = [str(theme_dir)]
+    base_dir = SKILL_DIR / "themes" / "bento-tech"
+    if theme_name != "bento-tech" and base_dir.is_dir():
+        loader_paths.append(str(base_dir))
     env = Environment(
-        loader=FileSystemLoader(str(theme_dir)),
+        loader=FileSystemLoader(loader_paths),
         autoescape=True,  # data 里用户字符串自动 escape XML 特殊字符；SVG 嵌套用 | safe 透传
         keep_trailing_newline=False,
         trim_blocks=True,
