@@ -74,14 +74,24 @@
 {%- set bottom_h = 0 -%}
 {%- endif -%}
 
-{# === 中段：primary + secondary 作为整体内容块，在剩余空间垂直居中
-     用 visual top/bottom 而非 baseline 算 content_h，保证视觉居中（不仅 baseline 居中）。
-     字符 visual range 估算：
-       primary：baseline 上方 ~0.85×字号 是字符顶
-       secondary value：baseline 下方 ~0.20×字号 是字符底（有 descender）
+{# === 中段：primary + secondary
+     宽矮卡（H<280 且 W>=520）：secondary 横向铺在 primary 右侧（节省垂直空间）
+     其他卡：secondary 在 primary 下方居中排列
+     用 visual top/bottom 而非 baseline 算 content_h，保证视觉居中
 === #}
 {%- set has_sec = (d.secondary is defined) and d.secondary and (H >= 180) -%}
+{%- set side_by_side = (H < 280) and (W >= 520) and has_sec -%}
 {%- set primary_visual_h = (huge * 0.85) | int -%}
+
+{%- if side_by_side -%}
+{# 横向模式：primary 占左半，secondary 占右半
+   primary baseline 居中在 mid 段（无 secondary 块计入高度）#}
+{%- set content_visual_h = primary_visual_h -%}
+{%- set mid_avail = H - top_h - bottom_h -%}
+{%- set mid_pad = ((mid_avail - content_visual_h) / 2) | int -%}
+{%- if mid_pad < 0 -%}{%- set mid_pad = 0 -%}{%- endif -%}
+{%- set primary_y = top_h + mid_pad + primary_visual_h -%}
+{%- else -%}
 {%- if has_sec -%}
 {%- set sec_visual_tail = (sec_value_size * 0.2) | int -%}
 {%- set sec_block_h = sec_gap + sec_label_to_value + sec_visual_tail -%}
@@ -92,9 +102,8 @@
 {%- set mid_avail = H - top_h - bottom_h -%}
 {%- set mid_pad = ((mid_avail - content_visual_h) / 2) | int -%}
 {%- if mid_pad < 0 -%}{%- set mid_pad = 0 -%}{%- endif -%}
-
-{# primary baseline = top_h + mid_pad + primary_visual_h #}
 {%- set primary_y = top_h + mid_pad + primary_visual_h -%}
+{%- endif -%}
 
 {%- if p.value -%}
 <text x="0" y="{{ primary_y }}" font-size="{{ huge }}" fill="{{ theme.colors.text_primary }}" font-weight="800">{{ v_str }}</text>
@@ -109,16 +118,34 @@
 
 {%- if has_sec -%}
 {%- set sec = d.secondary[:3] -%}
+{%- if side_by_side -%}
+{# 横向模式：primary 占左半（按 value width + suffix + 80px gap），secondary 在右侧均分
+   sec 区起始 x = max(主数字宽 + suffix 估算 + 一些 padding, W*0.5) #}
+{%- set p_unit_w = ((p.unit | default('') | length) * unit_size * 0.6) | int -%}
+{%- set p_suffix_w = ((p.suffix | default('') | length) * theme.type_scale.body * 0.55) | int -%}
+{%- set primary_block_w = ns.vw + 8 + p_unit_w + 12 + p_suffix_w + 24 -%}
+{%- if primary_block_w < (W * 0.5) | int -%}{%- set primary_block_w = (W * 0.5) | int -%}{%- endif -%}
+{%- set sec_area_w = W - primary_block_w -%}
+{%- set sec_col_w = (sec_area_w / (sec | length)) | int -%}
+{%- set sec_label_y_h = primary_y - (primary_visual_h * 0.5) | int -%}
+{%- set sec_value_y_h = sec_label_y_h + sec_label_to_value -%}
+{%- for s in sec -%}
+{%- set sx = primary_block_w + loop.index0 * sec_col_w -%}
+<text x="{{ sx }}" y="{{ sec_label_y_h }}" font-size="12" fill="{{ theme.colors.text_muted }}" letter-spacing="1">{{ s.label }}</text>
+<text x="{{ sx }}" y="{{ sec_value_y_h }}" font-size="{{ sec_value_size }}" fill="{{ theme.colors.text_primary }}" font-weight="700">{{ s.value }}</text>
+{%- endfor -%}
+{%- else -%}
+{# 竖向模式：secondary 在 primary 下方居中排列（原逻辑）#}
 {%- set col_w = (W / (sec | length)) | int -%}
 {%- set sec_label_y = primary_y + sec_gap -%}
 {%- set sec_value_y = sec_label_y + sec_label_to_value -%}
-{# Fail-safe：value baseline 不能越过 progress 上沿 #}
 {%- if sec_value_y < H - bottom_h - 2 -%}
 {%- for s in sec -%}
 {%- set sx = loop.index0 * col_w -%}
 <text x="{{ sx }}" y="{{ sec_label_y }}" font-size="12" fill="{{ theme.colors.text_muted }}" letter-spacing="1">{{ s.label }}</text>
 <text x="{{ sx }}" y="{{ sec_value_y }}" font-size="{{ sec_value_size }}" fill="{{ theme.colors.text_primary }}" font-weight="700">{{ s.value }}</text>
 {%- endfor -%}
+{%- endif -%}
 {%- endif -%}
 {%- endif -%}
 
