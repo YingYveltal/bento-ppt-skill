@@ -226,3 +226,17 @@
 - ❌ card-text 段落 > 80 字 → 文字会溢出卡片边界
 - ❌ card-stat 的 value 超过 6 字符（如 "1234567"）→ 大字号塞不下，改用单位或科学计数（"1.2M"）
 - ❌ chart-bar items > 6 → 拆成两页或换非水平条形的呈现
+- ❌ **mixed-grid 4 个槽全塞复合 component**（card-list / card-stack / card-text 同时上）→ 信息密度爆表，可读性骤降。如果一页确实需要 4 块独立信息，要么：
+  - 用 `single-focus` 强调一个核心 + 拆出第二页放剩余
+  - mixed-grid 里**至少一个 slot 用 card-stat / card-image / card-quote**（"轻"组件）做留白
+  - 改用 `hero-top`，顶横幅 + 下方 3 列轻组件，比 mixed-grid 4 槽更易读
+- ❌ **多列同时给 highlight**（每列 card-list 都有 highlight=true）→ 跨列对比会凸显这些 highlight 项，确认它们确实是"读者最该看的"再用；如果只是想强调每列的"第一项"，不必都加 highlight
+
+## 何时拆页
+
+发生以下任一就拆：
+
+- mixed-grid 4 槽都用了"复合"组件（card-text / card-list / card-stack）
+- 一页要回答 ≥ 2 个独立问题
+- 用 card-text 时单段超 80 字 + 同页还有其他 component
+- card-list items > 5（自动会被截断到 5）

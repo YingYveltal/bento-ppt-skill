@@ -78,14 +78,15 @@
 {%- set title_fill = theme.colors.text_primary -%}
 {%- set desc_fill = theme.colors.text_secondary -%}
 {%- if dim_others and not is_hl -%}
-{%- set this_op = '0.45' -%}
+{%- set this_op = '0.42' -%}
 {%- set title_fill = theme.colors.text_secondary -%}
 {%- set desc_fill = theme.colors.text_muted -%}
 {%- endif -%}
 <g transform="translate(0, {{ ry }})" opacity="{{ this_op }}">
   {%- if is_hl %}
-  {# 高亮项：左侧 3px 主题色细条 #}
-  <rect x="-12" y="-2" width="3" height="{{ (row_h - 8) }}" rx="1.5" fill="{{ badge_fill }}"/>
+  {# 高亮项视觉强化：accent 色背景块（限制在 list 内容区不外溢）+ 左侧 4px 粗条（外凸）#}
+  <rect x="-8" y="-6" width="{{ W }}" height="{{ row_h - 4 }}" rx="6" fill="{{ badge_fill }}" fill-opacity="0.08"/>
+  <rect x="-12" y="-6" width="4" height="{{ row_h - 4 }}" rx="2" fill="{{ badge_fill }}"/>
   {%- endif %}
   <rect x="0" y="0" width="32" height="32" rx="8" fill="{{ badge_fill }}"/>
   <text x="16" y="22" text-anchor="middle" font-size="15" font-weight="700" fill="{{ badge_text }}">{{ '%02d' | format(loop.index) }}</text>
