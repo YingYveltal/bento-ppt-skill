@@ -5,17 +5,44 @@
      primary  object    主数字 {value, unit?, suffix?}
                           - value: 大字数字
                           - unit:  紧贴 value 右侧的小单位
-                          - suffix: 数字下方/右侧的描述短语（"连接设备数"）
+                          - suffix: 数字下方/右侧的描述短语
      secondary array?   2-3 个支撑指标 [{label, value}]，横向铺
      progress  object?  {percent: 0-100, label?: string}  底部进度条
      badges    array?   胶囊小标签
-   字号自适应：W < 380 用 64；< 600 用 80；否则用 100（比 card-stat 稍小，留位置给 secondary）
+
+   字号 + 槽位密度自适应：
+     H >= 360: huge=100, 全 secondary + progress 都画
+     280 <= H < 360: huge=80, secondary 紧凑铺排
+     H < 280: huge=64, secondary 隐藏（强烈不推荐 H<280 用 card-stack；推荐用 card-stat 替代）
+     如果 secondary y 会超出 H，自动跳过该项（fail-safe，不溢出裁切）
 #}
 {%- from "macros.svg.j2" import render_badges -%}
 {%- set d = data -%}
 {%- set H = slot_h or 560 -%}
 {%- set W = slot_w or 600 -%}
-{%- set huge = 64 if W < 380 else (80 if W < 600 else 100) -%}
+
+{# 字号 + 间距按 H 分档 #}
+{%- if H >= 360 -%}
+{%- set huge = 100 if W >= 600 else (80 if W >= 380 else 64) -%}
+{%- set primary_to_sec_gap = 40 -%}
+{%- set sec_label_to_value = 30 -%}
+{%- set sec_value_size = theme.type_scale.h3 -%}
+{%- set primary_top_pad = 28 -%}
+{%- elif H >= 240 -%}
+{# 中型卡（mixed-grid 280 高、major-minor 280 高均落在此档）#}
+{%- set huge = 64 if W >= 380 else 48 -%}
+{%- set primary_to_sec_gap = 18 -%}
+{%- set sec_label_to_value = 22 -%}
+{%- set sec_value_size = 22 -%}
+{%- set primary_top_pad = 12 -%}
+{%- else -%}
+{%- set huge = 48 -%}
+{%- set primary_to_sec_gap = 12 -%}
+{%- set sec_label_to_value = 18 -%}
+{%- set sec_value_size = 16 -%}
+{%- set primary_top_pad = 8 -%}
+{%- endif -%}
+
 {%- set unit_size = (huge * 0.30) | int -%}
 {%- set p = d.primary or {} -%}
 {%- set v_str = p.value | default('') | string -%}
@@ -41,7 +68,7 @@
 
 {# 主数字 #}
 {%- if p.value -%}
-{%- set y.p = y.p + 28 + huge -%}
+{%- set y.p = y.p + primary_top_pad + huge -%}
 <text x="0" y="{{ y.p }}" font-size="{{ huge }}" fill="{{ theme.colors.text_primary }}" font-weight="800">{{ v_str }}</text>
 {%- if p.unit -%}
 <text x="{{ ns.vw + 8 }}" y="{{ y.p }}" font-size="{{ unit_size }}" fill="{{ theme.colors.accent_secondary }}" font-weight="600">{{ p.unit }}</text>
@@ -52,17 +79,22 @@
 {%- endif -%}
 {%- endif -%}
 
-{# secondary 横向铺：2-3 个小指标 #}
-{%- if d.secondary -%}
+{# secondary 横向铺：H<180 跳过；其他情况按可用空间渲染 #}
+{%- if d.secondary and H >= 180 -%}
 {%- set sec = d.secondary[:3] -%}
 {%- set col_w = (W / (sec | length)) | int -%}
-{%- set y.p = y.p + 40 -%}
+{%- set y.p = y.p + primary_to_sec_gap -%}
+{%- set sec_value_y = y.p + sec_label_to_value -%}
+{# 进度条预留 #}
+{%- set bar_reserved = (60 if d.progress and d.progress.label else (30 if d.progress else 0)) -%}
+{%- if sec_value_y < H - bar_reserved - 4 -%}
 {%- for s in sec -%}
 {%- set sx = loop.index0 * col_w -%}
 <text x="{{ sx }}" y="{{ y.p }}" font-size="12" fill="{{ theme.colors.text_muted }}" letter-spacing="1">{{ s.label }}</text>
-<text x="{{ sx }}" y="{{ y.p + 30 }}" font-size="{{ theme.type_scale.h3 }}" fill="{{ theme.colors.text_primary }}" font-weight="700">{{ s.value }}</text>
+<text x="{{ sx }}" y="{{ sec_value_y }}" font-size="{{ sec_value_size }}" fill="{{ theme.colors.text_primary }}" font-weight="700">{{ s.value }}</text>
 {%- endfor -%}
-{%- set y.p = y.p + 50 -%}
+{%- set y.p = sec_value_y + 20 -%}
+{%- endif -%}
 {%- endif -%}
 
 {# 进度条：底部 #}
@@ -71,9 +103,11 @@
 {%- if pct < 0 -%}{%- set pct = 0 -%}{%- endif -%}
 {%- if pct > 100 -%}{%- set pct = 100 -%}{%- endif -%}
 {%- set bar_y = H - (60 if d.progress.label else 30) -%}
+{%- if bar_y > y.p -%}
 <rect x="0" y="{{ bar_y }}" width="{{ W }}" height="6" rx="3" fill="{{ theme.colors.card_fill }}" fill-opacity="0.10"/>
 <rect x="0" y="{{ bar_y }}" width="{{ ((W * pct) / 100) | int }}" height="6" rx="3" fill="url(#accent-grad)"/>
 {%- if d.progress.label -%}
 <text x="0" y="{{ bar_y + 28 }}" font-size="{{ theme.type_scale.small }}" fill="{{ theme.colors.text_secondary }}">{{ d.progress.label }}</text>
+{%- endif -%}
 {%- endif -%}
 {%- endif -%}
