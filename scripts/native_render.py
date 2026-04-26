@@ -147,11 +147,19 @@ class NativeRenderer:
             self._x(slot["x"]), self._y(slot["y"]),
             self._x(slot["w"]), self._y(slot["h"]),
         )
-        sh.fill.solid()
-        sh.fill.fore_color.rgb = _hex(self.theme["colors"]["card_fill"])
-        sh.fill.transparency = 1.0 - self.theme["colors"]["card_fill_opacity"]
-        sh.line.color.rgb = _hex(self.theme["colors"]["card_stroke"])
-        sh.line.width = Pt(self.theme["spacing"]["card_stroke_width"])
+        # 卡片半透明白填充（玻璃感）
+        self._set_solid_fill(
+            sh,
+            self.theme["colors"]["card_fill"],
+            opacity=self.theme["colors"]["card_fill_opacity"],
+        )
+        # 描边带透明度
+        self._set_line_alpha(
+            sh,
+            self.theme["colors"]["card_stroke"],
+            opacity=self.theme["colors"]["card_stroke_opacity"],
+            width_pt=self.theme["spacing"]["card_stroke_width"],
+        )
         # 圆角调整：MSO ROUNDED_RECTANGLE adjustment 是相对短边的比例（0-0.5）
         target_radius_svg = self.theme["spacing"]["card_radius"]
         short_side = min(slot["w"], slot["h"])
@@ -251,11 +259,8 @@ class NativeRenderer:
                 self._x(x_cursor), self._y(svg_y),
                 self._x(w_est), self._y(22),
             )
-            sh.fill.solid()
-            sh.fill.fore_color.rgb = _hex(bg)
-            sh.fill.transparency = 0.78
-            sh.line.color.rgb = _hex(bg)
-            sh.line.width = Pt(0.5)
+            self._set_solid_fill(sh, bg, opacity=0.22)
+            self._set_line_alpha(sh, bg, opacity=0.55, width_pt=0.5)
             try:
                 sh.adjustments[0] = 0.5
             except Exception:
@@ -267,6 +272,47 @@ class NativeRenderer:
             )
             x_cursor += w_est + 8
 
+    # ---------- 共用工具：fill alpha ----------
+
+    def _set_solid_fill(self, shape, color_hex: str, opacity: float = 1.0) -> None:
+        """实色填充 + 可选透明度。
+        python-pptx 的 FillFormat 没有 transparency setter（曾是社区提案、未实现），
+        必须用 lxml 给 <a:srgbClr> 加 <a:alpha val="..."/> 子元素。
+        OOXML alpha val 是 0-100000 整数，100000 = 完全不透明。
+        """
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = _hex(color_hex)
+        if opacity < 1.0:
+            sp_pr = shape._element.spPr
+            solid_fill = sp_pr.find(f"{{{A_NS}}}solidFill")
+            if solid_fill is None:
+                return
+            clr = solid_fill[0]
+            for child in list(clr):
+                if child.tag == f"{{{A_NS}}}alpha":
+                    clr.remove(child)
+            alpha_el = etree.SubElement(clr, f"{{{A_NS}}}alpha")
+            alpha_el.set("val", str(int(max(0.0, min(1.0, opacity)) * 100000)))
+
+    def _set_line_alpha(self, shape, color_hex: str, opacity: float = 1.0, width_pt: float = 1) -> None:
+        """描边色 + 可选透明度（同上原理，写到 line 的 solidFill）。"""
+        shape.line.color.rgb = _hex(color_hex)
+        shape.line.width = Pt(width_pt)
+        if opacity < 1.0:
+            sp_pr = shape._element.spPr
+            ln = sp_pr.find(f"{{{A_NS}}}ln")
+            if ln is None:
+                return
+            solid_fill = ln.find(f"{{{A_NS}}}solidFill")
+            if solid_fill is None:
+                return
+            clr = solid_fill[0]
+            for child in list(clr):
+                if child.tag == f"{{{A_NS}}}alpha":
+                    clr.remove(child)
+            alpha_el = etree.SubElement(clr, f"{{{A_NS}}}alpha")
+            alpha_el.set("val", str(int(max(0.0, min(1.0, opacity)) * 100000)))
+
     # ---------- 共用工具：进度条 + 装饰条 + accent 实色矩形 ----------
 
     def _add_solid_rect(self, slide, svg_x, svg_y, svg_w, svg_h, color: str,
@@ -277,10 +323,7 @@ class NativeRenderer:
             self._x(svg_x), self._y(svg_y),
             self._x(svg_w), self._y(svg_h),
         )
-        sh.fill.solid()
-        sh.fill.fore_color.rgb = _hex(color)
-        if transparency > 0:
-            sh.fill.transparency = transparency
+        self._set_solid_fill(sh, color, opacity=1.0 - transparency)
         sh.line.fill.background()
         if rounded:
             try:
@@ -296,9 +339,7 @@ class NativeRenderer:
             self._x(svg_x), self._y(svg_y),
             self._x(svg_w), self._y(6),
         )
-        track.fill.solid()
-        track.fill.fore_color.rgb = _hex(self.theme["colors"]["card_fill"])
-        track.fill.transparency = 0.90
+        self._set_solid_fill(track, self.theme["colors"]["card_fill"], opacity=0.10)
         track.line.fill.background()
         try:
             track.adjustments[0] = 0.5
@@ -313,8 +354,7 @@ class NativeRenderer:
                 self._x(svg_x), self._y(svg_y),
                 self._x(fill_w), self._y(6),
             )
-            bar.fill.solid()
-            bar.fill.fore_color.rgb = _hex(self.theme["colors"]["accent_primary"])
+            self._set_solid_fill(bar, self.theme["colors"]["accent_primary"], opacity=1.0)
             bar.line.fill.background()
             try:
                 bar.adjustments[0] = 0.5
@@ -848,11 +888,8 @@ class NativeRenderer:
             self._x(inner["x"]), self._y(inner["y"] + y_top),
             self._x(inner["w"]), self._y(img_h),
         )
-        ph.fill.solid()
-        ph.fill.fore_color.rgb = _hex(self.theme["colors"]["accent_primary"])
-        ph.fill.transparency = 0.90
-        ph.line.color.rgb = _hex(self.theme["colors"]["accent_primary"])
-        ph.line.width = Pt(1)
+        self._set_solid_fill(ph, self.theme["colors"]["accent_primary"], opacity=0.10)
+        self._set_line_alpha(ph, self.theme["colors"]["accent_primary"], opacity=0.4, width_pt=1)
         try:
             ph.adjustments[0] = 0.05
         except Exception:
@@ -905,9 +942,7 @@ class NativeRenderer:
                 self._x(inner["x"] + label_w), self._y(inner["y"] + ry),
                 self._x(bar_w_max), self._y(bar_h),
             )
-            track.fill.solid()
-            track.fill.fore_color.rgb = _hex(self.theme["colors"]["card_fill"])
-            track.fill.transparency = 0.92
+            self._set_solid_fill(track, self.theme["colors"]["card_fill"], opacity=0.08)
             track.line.fill.background()
             try:
                 track.adjustments[0] = 0.15
