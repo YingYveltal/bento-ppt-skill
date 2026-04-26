@@ -147,17 +147,25 @@ ppt shoot <ws>
 ## 阶段 7：导出
 
 ```bash
-ppt export <ws> --format pptx       # 默认；svgBlip 注入，PowerPoint 2019+ 完全可编辑
-ppt export <ws> --format pdf        # cairosvg 转 PDF
-ppt export <ws> --format html       # 单文件版 deck.html
+ppt export <ws> --format pptx       # 默认：Native renderer（python-pptx 原生 shape，100% 可编辑）
+ppt export <ws> --format pptx-svg   # 备选：svgBlip 注入（SVG 矢量，好看但 PowerPoint 把整页当图片对象，需手动"转换为形状"）
+ppt export <ws> --format pdf        # chrome --print-to-pdf 转 deck.html
+ppt export <ws> --format html       # 单文件版 deck-standalone.html
 ```
 
-**SVG → PPTX 兼容性**：
-- PowerPoint 365 / 2019+：完美，矢量可编辑
-- PowerPoint 2016：显示 PNG fallback（也能看，但不能编辑文字）
-- WPS / Keynote：表现各异，建议用前测一遍
+**`pptx`（默认 / 推荐）**：
+- 用 `scripts/native_render.py` 直接渲染 PowerPoint 原生 shape
+- 单击文字 → 直接进入编辑模式
+- 单击卡片背景 → 拖动 / 调色 / 加边框
+- 视觉妥协：无渐变 / 无装饰光斑 / 无网格纹理（"商务平面"风格），但布局结构与 SVG 版完全一致
 
-详见 [reference/pptx-svg-internals.md](reference/pptx-svg-internals.md)。
+**`pptx-svg`（备选）**：
+- 现行 svgBlip OOXML 注入方案
+- PowerPoint 2019+/365 显示完美矢量（保留所有渐变 / 光斑 / 网格）
+- 但每页是一个 picture 对象，要右键"转换为形状"才能编辑文字（且转换会丢渐变）
+- 适合"出片好看、不需要二次编辑"的场景
+
+详见 [reference/pptx-rendering.md](reference/pptx-rendering.md)。
 
 ## CLI Reference
 

@@ -192,11 +192,13 @@ def cmd_export(ws: Path, fmt: str) -> dict:
     import export  # type: ignore
     if fmt == "pptx":
         return export.to_pptx(ws)
+    if fmt == "pptx-svg":
+        return export.to_pptx_svg(ws)
     if fmt == "pdf":
         return export.to_pdf(ws)
     if fmt == "html":
         return export.to_html(ws)
-    raise SystemExit(f"[export] 未知格式: {fmt}（支持 pptx / pdf / html）")
+    raise SystemExit(f"[export] 未知格式: {fmt}（支持 pptx / pptx-svg / pdf / html）")
 
 
 # ---------- main ----------
@@ -225,7 +227,7 @@ def main():
 
     e = sub.add_parser("export", help="导出最终产物")
     e.add_argument("ws", help="工作区路径")
-    e.add_argument("--format", "-f", default="pptx", choices=["pptx", "pdf", "html"])
+    e.add_argument("--format", "-f", default="pptx", choices=["pptx", "pptx-svg", "pdf", "html"])
 
     args = ap.parse_args()
 

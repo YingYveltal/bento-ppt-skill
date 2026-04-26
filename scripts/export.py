@@ -36,6 +36,18 @@ SVG_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
 
 
 def to_pptx(ws: Path) -> dict:
+    """默认 PPTX 路径：用 NativeRenderer 直接生成原生 shape，100% 可编辑。"""
+    sys.path.insert(0, str(Path(__file__).parent))
+    from native_render import render_pptx
+    out_path = render_pptx(ws)
+    return {"output": str(out_path)}
+
+
+def to_pptx_svg(ws: Path) -> dict:
+    """旧路径：把 shoot 截好的 PNG 嵌入 pptx 并注入 svgBlip 矢量引用。
+    显示效果好（保留 SVG 渐变 / 光斑），但 PowerPoint 把整页当一个图片对象，
+    需要右键"转换为形状"才能编辑文字。
+    """
     slides_dir = ws / "slides"
     shots_dir = ws / "shots"
     if not slides_dir.is_dir():
