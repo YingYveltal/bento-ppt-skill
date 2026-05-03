@@ -5,8 +5,8 @@ A Claude Code skill that turns a topic or document into a 16:9 SVG slide deck in
 灵感来自 sandun [《应该是目前最强的 PPT Agent，附上完整思路分享》](https://linux.do/t/topic/1782304)。把作者的"四步流水线 + Bento Grid 卡片布局 + 整页 SVG"方法论工程化成一个可复用的 Claude Code skill。
 
 ![cover](examples/dify-intro/shots/01-cover.png)
-![data page](examples/dify-intro/shots/05-pre-launch.png)
-![mixed grid](examples/dify-intro/shots/07-week-one.png)
+![data page](examples/dify-intro/shots/05-major-minor-demo.png)
+![mixed grid](examples/dify-intro/shots/07-mixed-grid-demo.png)
 
 ## Features
 
